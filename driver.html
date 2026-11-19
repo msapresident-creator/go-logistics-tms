@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0c2437"><title>Go Logistics | Driver Tablet</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#152c3c;background:#f1f5f8}*{box-sizing:border-box}body{margin:0}button,input{font:inherit}button{cursor:pointer}button:disabled{opacity:.55;cursor:wait}
+header{background:#0c2437;color:white;padding:15px max(18px,env(safe-area-inset-left));display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:10;box-shadow:0 4px 18px #09223824}.brand{font-weight:850;font-size:19px;letter-spacing:.2px}.brand span{color:#45c4bf}.sub{font-size:11px;color:#bbd2dc;letter-spacing:1.1px;text-transform:uppercase}.wrap{max-width:1100px;margin:0 auto;padding:22px 18px 80px}.panel{background:white;border:1px solid #dbe5eb;border-radius:18px;box-shadow:0 8px 30px #15384a0b;padding:22px;margin-bottom:16px}h1{font-size:clamp(25px,4vw,34px);margin:0 0 8px}h2{font-size:19px;margin:0 0 14px}p{line-height:1.5}.muted{color:#607789}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}.field{display:flex;flex-direction:column;gap:7px;margin:12px 0;font-size:14px;font-weight:650}input{width:100%;border:1px solid #bfcfd8;border-radius:10px;padding:14px 13px;background:white;color:#162b3b;font-size:17px}input:focus{outline:3px solid #40bdb74d;border-color:#159d99}.btn{border:0;border-radius:11px;padding:13px 17px;background:#e6eef2;color:#183449;font-weight:750;min-height:48px}.primary{background:#007f86;color:white}.dark{background:#12344a;color:white}.danger{background:#fff0ed;color:#ad352b}.btnrow{display:flex;gap:9px;flex-wrap:wrap}.pill{display:inline-flex;border-radius:50px;padding:6px 10px;background:#e8f4f3;color:#076c70;font-size:12px;font-weight:750}.stop{border:1px solid #d9e4ea;border-radius:14px;padding:17px;background:#fff}.stophead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.stop h3{margin:3px 0 5px;font-size:18px}.stop .meta{font-size:13px;color:#607789}.doc{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-top:1px solid #e8eef1}.docname{overflow-wrap:anywhere;font-size:14px;font-weight:650}.small{font-size:12px;color:#6c7d89}.hide{display:none!important}.notice{background:#fff7e5;border:1px solid #f0d9a0;padding:12px;border-radius:12px;color:#75551a;font-size:13px}.status{font-size:13px;color:#b8d6db;max-width:440px;text-align:right}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0}.toolbar input{width:auto;min-width:175px}.empty{text-align:center;padding:28px;color:#70818d}.sigbox{border:2px dashed #9cb6c1;border-radius:12px;background:#fff;touch-action:none;width:100%;height:180px;display:block}.siglabel{font-size:14px;font-weight:700;margin:12px 0 8px}.modal{position:fixed;inset:0;background:#071b2cbb;display:flex;align-items:center;justify-content:center;padding:15px;z-index:50}.modal .panel{width:min(600px,100%);max-height:95vh;overflow:auto;margin:0}.tag{font-size:12px;font-weight:750;background:#eef3f7;border-radius:8px;padding:5px 8px}.spinner{padding:14px}.inline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}@media(max-width:600px){.wrap{padding:15px 12px 65px}.panel{padding:17px}header{padding:12px}.status{display:none}.btn{flex:1}.doc{align-items:flex-start;flex-direction:column}.toolbar input{flex:1;min-width:0}}
+</style></head><body>
+<header><div><div class="brand">GO <span>LOGISTICS</span></div><div class="sub">Driver Tablet · Digital Paperwork</div></div><div class="inline"><span id="who" class="status"></span><button id="logout" class="btn hide" type="button">Log out</button></div></header>
+<main class="wrap">
+<section id="loginPanel" class="panel" style="max-width:520px;margin:5vh auto"><span class="pill">Driver portal</span><h1 style="margin-top:12px">Driver sign in</h1><p class="muted">Access assigned routes, original bills of lading, and upload signed paperwork from a tablet.</p>
+<label class="field">Truck number<input id="truck" inputmode="text" autocomplete="username" placeholder="e.g. 15"></label>
+<label class="field">Driver PIN / password<input id="password" type="password" autocomplete="current-password" placeholder="Your assigned login PIN"></label>
+<button class="btn primary" id="login" style="width:100%">Sign in</button>
+<p class="notice">This version uses existing Supabase driver accounts. Truck 15 signs in through the existing truck15 account. A truly PIN-free truck-number-only login requires a secure server-side login endpoint; it is not safe to grant access based on a truck number alone.</p>
+<p id="loginError" role="alert" style="color:#b5362d"></p></section>
+<section id="app" class="hide"><div class="inline" style="justify-content:space-between"><div><span class="pill">Driver workspace</span><h1 style="margin-top:9px">My routes & BOLs</h1><p class="muted" style="margin-top:0">Assigned stops and live paperwork from Go Logistics TMS.</p></div></div>
+<div class="panel"><div class="toolbar"><label class="field" style="margin:0">Service date<input id="date" type="date"></label><button id="refresh" class="btn dark">Refresh routes</button></div><div id="message" class="small"></div></div>
+<div id="routes"></div></section></main>
+<div id="signModal" class="modal hide"><div class="panel"><div class="inline" style="justify-content:space-between"><h2>Sign / upload paperwork</h2><button class="btn" id="closeModal">Close</button></div><p id="signStop" class="muted"></p><label class="field">Optional backup photo or PDF<input id="upload" type="file" accept="image/*,application/pdf" capture="environment"></label><p class="small">The customer signs the original system-generated customer BOL below. A signed PDF will be created automatically. Optional backup photos are not needed for the standard workflow.</p><label class="field">Received by (customer name)<input id="receiver" maxlength="120" placeholder="Customer name"></label><div class="siglabel">Customer signature (required)</div><canvas id="signature" class="sigbox"></canvas><div class="btnrow" style="margin-top:10px"><button id="clearSig" class="btn">Clear signature</button><button id="submitDoc" class="btn primary">Complete delivery & save signed BOL</button></div><p id="uploadMessage" role="status"></p></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script>
+const URL='https://loxbxbnpqqxxxlogbvsk.supabase.co',KEY='sb_publishable_l0YoeIewXnAfA7t_U3Lhew_-s_Z9_y_';
+const db=window.supabase.createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+const $=id=>document.getElementById(id);
+const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let currentUser=null,currentStop=null,stopsById={},signatureTouched=false;
+function message(t){$('message').textContent=t}
+function isoToday(){let d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
+$('date').value=isoToday();
+function showAuth(user){currentUser=user;$('loginPanel').classList.toggle('hide',!!user);$('app').classList.toggle('hide',!user);$('logout').classList.toggle('hide',!user);$('who').textContent=user?.email||'';if(user)loadRoutes()}
+$('login').onclick=async()=>{const truck=$('truck').value.trim().toLowerCase();const password=$('password').value;$('loginError').textContent='';if(!/^[a-z0-9_-]{1,24}$/.test(truck)){ $('loginError').textContent='Enter a valid truck number';return}if(!password){$('loginError').textContent='Enter your assigned PIN / password';return}
+$('login').disabled=true;try{const email='truck'+truck+'@gologisticsusa.com';const {data,error}=await db.auth.signInWithPassword({email,password});if(error)throw error;showAuth(data.user)}catch(e){$('loginError').textContent=e.message||String(e)}finally{$('login').disabled=false}};
+$('logout').onclick=async()=>{await db.auth.signOut();showAuth(null);$('routes').innerHTML=''};
+$('refresh').onclick=loadRoutes;$('date').onchange=loadRoutes;
+async function loadRoutes(){if(!currentUser)return;const day=$('date').value;message('Loading assigned routes…');$('routes').innerHTML='';
+try{const {data:assignments,error:aerr}=await db.from('driver_route_assignments').select('*').eq('driver_user_id',currentUser.id).eq('service_date',day);if(aerr)throw aerr;
+if(!assignments?.length){$('routes').innerHTML='<div class="panel empty">No assigned routes for this date.</div>';message('No routes assigned');return}
+const routeKeys=[...new Set(assignments.map(x=>String(x.route_key)))];
+const {data:stops,error:serr}=await db.from('driver_stops').select('*').eq('service_date',day).in('route_key',routeKeys).order('stop_sequence');if(serr)throw serr;
+const stopIds=(stops||[]).map(s=>s.id);let docs=[],orders=[];
+if(stopIds.length){const [d,o]=await Promise.all([db.from('driver_documents').select('id,stop_id,order_id,document_type,storage_path,original_filename,uploaded_at').in('stop_id',stopIds).order('uploaded_at',{ascending:false}),db.from('driver_stop_orders').select('stop_id,order_id').in('stop_id',stopIds)]);if(d.error)throw d.error;if(o.error)throw o.error;docs=d.data||[];orders=o.data||[]}
+stopsById=Object.fromEntries((stops||[]).map(s=>[s.id,s]));
+$('routes').innerHTML=routeKeys.map(route=>{const rs=(stops||[]).filter(s=>String(s.route_key)===route);return `<section class="panel"><div class="inline" style="justify-content:space-between"><h2>Route ${esc(route)}</h2><span class="pill">${rs.length} stops</span></div><div class="grid">${rs.map(s=>{const sd=docs.filter(d=>d.stop_id===s.id);const os=orders.filter(o=>o.stop_id===s.id);return `<article class="stop"><div class="stophead"><div><span class="tag">STOP ${esc(s.stop_sequence||'—')}</span><h3>${esc(s.customer_name||'Delivery stop')}</h3><div class="meta">${esc(s.address||s.delivery_address||'')}</div></div><span class="pill">${sd.length} files</span></div><p class="small">${os.length?os.length+' linked order(s): '+os.map(o=>esc(o.order_id)).join(', '):'No linked order visible'}</p><div>${sd.length?sd.map(d=>`<div class="doc"><div><div class="docname">${esc(d.original_filename||d.document_type||'Document')}</div><div class="small">${esc(d.document_type)} ${d.uploaded_at?'· '+esc(new Date(d.uploaded_at).toLocaleString()):''}</div></div><button class="btn" data-view="${esc(d.id)}">View PDF / photo</button></div>`).join(''):'<div class="small">No BOL has been uploaded for this stop.</div>'}</div><div class="btnrow" style="margin-top:14px"><button class="btn primary" data-sign="${esc(s.id)}">Upload signed BOL</button></div></article>`}).join('')}</div></section>`}).join('');
+window._driverDocs=Object.fromEntries(docs.map(d=>[d.id,d]));
+message('Showing '+routeKeys.length+' assigned route(s) and '+(stops||[]).length+' stops');
+}catch(e){message('Could not load routes: '+(e.message||e));$('routes').innerHTML='<div class="panel notice">Route loading failed. Check that the driver account is assigned and has access to these tables.</div>'}}
+$('routes').addEventListener('click',async e=>{const view=e.target.closest('[data-view]');if(view){const d=window._driverDocs?.[view.dataset.view];if(!d)return;view.disabled=true;try{const {data,error}=await db.storage.from('driver-paperwork').createSignedUrl(d.storage_path,120);if(error)throw error;window.open(data.signedUrl,'_blank','noopener,noreferrer')}catch(err){alert('Unable to open document: '+err.message)}finally{view.disabled=false}return}
+const sign=e.target.closest('[data-sign]');if(sign)openSign(sign.dataset.sign)});
+function openSign(id){currentStop=stopsById[id];if(!currentStop)return;$('signStop').textContent='Stop '+(currentStop.stop_sequence||'')+' · '+(currentStop.customer_name||'');$('upload').value='';$('receiver').value='';$('uploadMessage').textContent='';$('signModal').classList.remove('hide');initCanvas()}
+$('closeModal').onclick=()=>{$('signModal').classList.add('hide');currentStop=null};
+const canvas=$('signature'),ctx=canvas.getContext('2d');let drawing=false;
+function initCanvas(){const rect=canvas.getBoundingClientRect();canvas.width=Math.max(300,Math.round(rect.width*devicePixelRatio));canvas.height=Math.round(180*devicePixelRatio);ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);ctx.lineWidth=2.4;ctx.strokeStyle='#17344a';ctx.lineCap='round';ctx.lineJoin='round';signatureTouched=false}
+function point(e){const r=canvas.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}}
+canvas.addEventListener('pointerdown',e=>{drawing=true;signatureTouched=true;canvas.setPointerCapture(e.pointerId);const p=point(e);ctx.beginPath();ctx.moveTo(p.x,p.y)});
+canvas.addEventListener('pointermove',e=>{if(!drawing)return;const p=point(e);ctx.lineTo(p.x,p.y);ctx.stroke()});
+canvas.addEventListener('pointerup',()=>drawing=false);canvas.addEventListener('pointercancel',()=>drawing=false);
+$('clearSig').onclick=initCanvas;
+function blobFromCanvas(){return new Promise(resolve=>canvas.toBlob(resolve,'image/png'))}
+async function uploadDoc(file,type){const path=currentUser.id+'/'+currentStop.id+'/'+crypto.randomUUID()+'-'+file.name.replace(/[^a-zA-Z0-9_.-]/g,'_');const {error:uerr}=await db.storage.from('driver-paperwork').upload(path,file,{contentType:file.type||'application/octet-stream',upsert:false});if(uerr)throw uerr;
+const {data:links,error:lerr}=await db.from('driver_stop_orders').select('order_id').eq('stop_id',currentStop.id);if(lerr)throw lerr;if(!links?.length)throw Error('This stop has no linked order. Ask dispatch to publish route orders before uploading signed paperwork.');
+const {error:derr}=await db.from('driver_documents').insert({stop_id:currentStop.id,order_id:links?.[0]?.order_id||null,document_type:type,storage_path:path,original_filename:file.name,uploaded_by:currentUser.id});if(derr)throw Error('File uploaded, but document record failed: '+derr.message);
+return true}
+async function createSignedBol(original,receiver){
+ if(!window.PDFLib)throw Error('PDF signing library unavailable. Check tablet connection.');
+ const {data:download,error:downloadError}=await db.storage.from('driver-paperwork').download(original.storage_path);
+ if(downloadError)throw downloadError;
+ const pdf=await PDFLib.PDFDocument.load(await download.arrayBuffer());
+ const page=pdf.getPages()[pdf.getPageCount()-1];
+ const sigBytes=await (await blobFromCanvas()).arrayBuffer();
+ const image=await pdf.embedPng(sigBytes);
+ const w=page.getWidth(),h=page.getHeight();
+ // Place within the consignee receipt area of the existing one-page TMS BOL.
+ // Review coordinates on a real printed BOL before production use.
+ const sigWidth=Math.min(175,w*.31),sigHeight=54;
+ const x=Math.max(35,w*.14),y=Math.max(54,h*.16);
+ page.drawImage(image,{x,y,width:sigWidth,height:sigHeight});
+ const font=await pdf.embedFont(PDFLib.StandardFonts.Helvetica);
+ page.drawText('Received by: '+receiver.slice(0,65),{x,y:y-14,size:8,font,color:PDFLib.rgb(.12,.2,.25)});
+ page.drawText('Signed: '+new Date().toLocaleString(),{x,y:y-25,size:8,font,color:PDFLib.rgb(.12,.2,.25)});
+ return new Blob([await pdf.save()],{type:'application/pdf'});
+}
+$('submitDoc').onclick=async()=>{
+ if(!currentStop||!currentUser)return;
+ const receiver=$('receiver').value.trim();
+ if(!receiver||!signatureTouched){$('uploadMessage').textContent='Enter the recipient name and capture a customer signature.';return}
+ $('submitDoc').disabled=true;$('uploadMessage').textContent='Preparing signed customer BOL…';
+ try{
+  const {data:originals,error:origErr}=await db.from('driver_documents').select('id,storage_path,original_filename,document_type').eq('stop_id',currentStop.id).eq('document_type','original').order('uploaded_at',{ascending:false}).limit(1);
+  if(origErr)throw origErr;if(!originals?.length)throw Error('Original TMS customer BOL is missing. Ask dispatch to publish BOLs first.');
+  const {data:existing,error:existingErr}=await db.from('driver_documents').select('id').eq('stop_id',currentStop.id).eq('document_type','signed_bol').limit(1);
+  if(existingErr)throw existingErr;if(existing?.length)throw Error('This stop already has a signed BOL. Ask dispatch to review before signing again.');
+  const original=originals[0],pdf=await createSignedBol(original,receiver);
+  const filename='SIGNED-'+(original.original_filename||'customer-bol.pdf').replace(/^SIGNED-/,'');
+  const path=currentUser.id+'/'+currentStop.id+'/'+crypto.randomUUID()+'-'+filename;
+  $('uploadMessage').textContent='Uploading signed BOL and recording delivery…';
+  const {error:uploadErr}=await db.storage.from('driver-paperwork').upload(path,pdf,{contentType:'application/pdf',upsert:false});if(uploadErr)throw uploadErr;
+  const {data:receipt,error:receiptErr}=await db.rpc('driver_complete_customer_bol',{p_stop_id:currentStop.id,p_storage_path:path,p_filename:filename,p_received_by:receiver});
+  if(receiptErr)throw Error('Signed PDF uploaded, but completion could not be recorded: '+receiptErr.message+'. Do not sign again; contact dispatch.');
+  $('uploadMessage').textContent='Delivery completed and signed BOL synchronized.';
+  await loadRoutes();setTimeout(()=>{$('signModal').classList.add('hide');currentStop=null},800);
+ }catch(e){$('uploadMessage').textContent='Could not complete: '+(e.message||e)}finally{$('submitDoc').disabled=false}
+};
+db.auth.getUser().then(({data})=>showAuth(data?.user||null));db.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT')showAuth(null)});
+</script></body></html>
